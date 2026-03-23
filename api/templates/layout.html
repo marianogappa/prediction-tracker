@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictions Tracker</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --border: #2a2d3a;
+            --text: #e4e4e7;
+            --text-muted: #8b8d98;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        header h1 { font-size: 1.5rem; font-weight: 600; }
+        header h1 a { color: var(--text); text-decoration: none; }
+        .filters {
+            display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+        }
+        .filters a {
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            transition: all 0.15s;
+        }
+        .filters a:hover, .filters a.active {
+            color: var(--text);
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        td { font-size: 0.9rem; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        a.row-link { color: var(--accent); text-decoration: none; }
+        a.row-link:hover { color: var(--accent-hover); text-decoration: underline; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .badge-draft { background: #334155; color: #94a3b8; }
+        .badge-enabled { background: #1e3a5f; color: #60a5fa; }
+        .badge-monitoring { background: #2d1b69; color: #a78bfa; }
+        .badge-disabled { background: #292524; color: #a8a29e; }
+        .badge-errored { background: #451a03; color: #fb923c; }
+        .badge-correct { background: #052e16; color: #4ade80; }
+        .badge-incorrect { background: #450a0a; color: #f87171; }
+        .badge-unresolved { background: #422006; color: #fbbf24; }
+        .empty { text-align: center; padding: 3rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header><h1><a href="/">Predictions Tracker</a></h1></header>
+
+    <div class="filters">
+        <a href="/" {{if eq .StateFilter ""}}class="active"{{end}}>All</a>
+        <a href="/?state=draft" {{if eq .StateFilter "draft"}}class="active"{{end}}>Draft</a>
+        <a href="/?state=enabled" {{if eq .StateFilter "enabled"}}class="active"{{end}}>Enabled</a>
+        <a href="/?state=monitoring" {{if eq .StateFilter "monitoring"}}class="active"{{end}}>Monitoring</a>
+        <a href="/?state=final_correct" {{if eq .StateFilter "final_correct"}}class="active"{{end}}>Correct</a>
+        <a href="/?state=final_incorrect" {{if eq .StateFilter "final_incorrect"}}class="active"{{end}}>Incorrect</a>
+        <a href="/?state=errored" {{if eq .StateFilter "errored"}}class="active"{{end}}>Errored</a>
+    </div>
+
+    {{if .Predictions}}
+    <table>
+        <thead>
+            <tr>
+                <th>Statement</th>
+                <th>Asset</th>
+                <th>State</th>
+                <th>Deadline</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Predictions}}
+            <tr>
+                <td><a class="row-link" href="/predictions/{{.ID}}">{{.Statement}}</a></td>
+                <td>{{.Asset}}</td>
+                <td><span class="badge {{stateClass (printf "%s" .State)}}">{{.State}}</span></td>
+                <td>{{.Deadline.Format "2006-01-02 15:04"}}</td>
+                <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <div class="empty">No predictions found.</div>
+    {{end}}
+</div>
+</body>
+</html>

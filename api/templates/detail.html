@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Prediction.Statement}} - Predictions Tracker</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --border: #2a2d3a;
+            --text: #e4e4e7;
+            --text-muted: #8b8d98;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        header h1 { font-size: 1.5rem; font-weight: 600; }
+        header h1 a { color: var(--text); text-decoration: none; }
+        .back { color: var(--accent); text-decoration: none; font-size: 0.85rem; margin-bottom: 1rem; display: inline-block; }
+        .back:hover { color: var(--accent-hover); }
+        .pred-header { margin-bottom: 2rem; }
+        .pred-header h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+        .meta { display: flex; gap: 1.5rem; flex-wrap: wrap; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-draft { background: #334155; color: #94a3b8; }
+        .badge-enabled { background: #1e3a5f; color: #60a5fa; }
+        .badge-monitoring { background: #2d1b69; color: #a78bfa; }
+        .badge-disabled { background: #292524; color: #a8a29e; }
+        .badge-errored { background: #451a03; color: #fb923c; }
+        .badge-correct { background: #052e16; color: #4ade80; }
+        .badge-incorrect { background: #450a0a; color: #f87171; }
+        .badge-unresolved { background: #422006; color: #fbbf24; }
+        .actions { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+        .btn:hover { border-color: var(--accent); background: rgba(99,102,241,0.1); }
+        .btn-export { background: var(--accent); border-color: var(--accent); color: white; }
+        .btn-export:hover { background: var(--accent-hover); }
+        .section { margin-bottom: 2rem; }
+        .section h3 {
+            font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 500;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        pre {
+            font-family: "SF Mono", "Fira Code", monospace;
+            font-size: 0.8rem;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+        .timeline { list-style: none; position: relative; padding-left: 1.5rem; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline li {
+            position: relative;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+        .timeline li::before {
+            content: '';
+            position: absolute;
+            left: -1.25rem;
+            top: 0.45rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+        .timeline .evt-type { font-weight: 600; color: var(--text); }
+        .timeline .evt-time { color: var(--text-muted); font-size: 0.75rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        th, td {
+            text-align: right;
+            padding: 0.4rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            text-align: right;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        th:first-child, td:first-child { text-align: left; }
+        .empty-msg { color: var(--text-muted); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header><h1><a href="/">Predictions Tracker</a></h1></header>
+
+    <a class="back" href="/">&larr; Back to list</a>
+
+    <div class="pred-header">
+        <h2>{{.Prediction.Statement}}</h2>
+        <div class="meta">
+            <span><strong>Asset:</strong> {{.Prediction.Asset}}</span>
+            <span><strong>State:</strong> <span class="badge {{stateClass (printf "%s" .Prediction.State)}}">{{.Prediction.State}}</span></span>
+            <span><strong>Deadline:</strong> {{.Prediction.Deadline.Format "2006-01-02 15:04 UTC"}}</span>
+            {{if .Prediction.AuthorName}}<span><strong>Author:</strong> {{.Prediction.AuthorName}}</span>{{end}}
+            {{if .Prediction.SourceURL}}<span><a href="{{.Prediction.SourceURL}}" style="color:var(--accent)">Source</a></span>{{end}}
+        </div>
+    </div>
+
+    <div class="actions">
+        {{if eq (printf "%s" .Prediction.State) "draft"}}
+        <form method="POST" action="/api/predictions/{{.Prediction.ID}}/enable" style="display:inline">
+            <button class="btn" type="submit">Enable</button>
+        </form>
+        {{end}}
+        {{if eq (printf "%s" .Prediction.State) "enabled"}}
+        <form method="POST" action="/api/predictions/{{.Prediction.ID}}/disable" style="display:inline">
+            <button class="btn" type="submit">Disable</button>
+        </form>
+        {{end}}
+        {{if eq (printf "%s" .Prediction.State) "disabled"}}
+        <form method="POST" action="/api/predictions/{{.Prediction.ID}}/enable" style="display:inline">
+            <button class="btn" type="submit">Re-enable</button>
+        </form>
+        {{end}}
+        <a class="btn btn-export" href="/api/predictions/{{.Prediction.ID}}/export">Export Markdown</a>
+    </div>
+
+    <div class="section">
+        <h3>Rule</h3>
+        <div class="card"><pre>{{printf "%+v" .Prediction.Rule}}</pre></div>
+    </div>
+
+    <div class="section">
+        <h3>Event Timeline</h3>
+        {{if .Events}}
+        <ul class="timeline">
+            {{range .Events}}
+            <li>
+                <span class="evt-type">{{.Type}}</span><br>
+                <span class="evt-time">{{.Timestamp.Format "2006-01-02 15:04:05 UTC"}}</span>
+            </li>
+            {{end}}
+        </ul>
+        {{else}}
+        <p class="empty-msg">No events recorded yet.</p>
+        {{end}}
+    </div>
+
+    <div class="section">
+        <h3>Price Values ({{len .Values}} candles)</h3>
+        {{if .Values}}
+        <div class="card">
+            <table>
+                <thead><tr><th>Timestamp</th><th>Open</th><th>High</th><th>Low</th><th>Close</th></tr></thead>
+                <tbody>
+                {{range .Values}}
+                <tr>
+                    <td style="text-align:left">{{.Timestamp}}</td>
+                    <td>{{printf "%.2f" .Open}}</td>
+                    <td>{{printf "%.2f" .High}}</td>
+                    <td>{{printf "%.2f" .Low}}</td>
+                    <td>{{printf "%.2f" .Close}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <p class="empty-msg">No price data fetched yet.</p>
+        {{end}}
+    </div>
+</div>
+</body>
+</html>
